@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chat Assistant</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  /* Chat container */
+  #chat-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 400px;
+    height: 600px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9999;
+  }
+
+  /* Minimized state */
+  #chat-container.minimized {
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 102, 255, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12);
+    background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%);
+  }
+
+  #chat-container.minimized:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 24px rgba(0, 102, 255, 0.32), 0 2px 8px rgba(0, 0, 0, 0.16);
+  }
+
+  /* Header */
+  #chat-header {
+    background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: opacity 0.3s ease;
+  }
+
+  #chat-container.minimized #chat-header {
+    display: none;
+  }
+
+  #header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #header-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #header-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+  }
+
+  #header-text h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  #header-text p {
+    font-size: 12px;
+    opacity: 0.9;
+  }
+
+  #close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+
+  #close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  #close-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: white;
+    stroke-width: 2;
+  }
+
+  /* Chat iframe */
+  #chat-iframe {
+    flex: 1;
+    border: none;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.3s ease;
+  }
+
+  #chat-container.minimized #chat-iframe {
+    display: none;
+  }
+
+  /* Floating button icon */
+  #floating-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    display: none;
+  }
+
+  #chat-container.minimized #floating-icon {
+    display: block;
+  }
+
+  #floating-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: white;
+  }
+
+  /* Notification badge */
+  #notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #FF3B30;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    border: 2px solid white;
+  }
+
+  #chat-container.minimized #notification-badge {
+    display: flex;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    #chat-container {
+      width: calc(100vw - 32px);
+      height: calc(100vh - 100px);
+      bottom: 16px;
+      right: 16px;
+    }
+
+    #chat-container.minimized {
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+    }
+
+    #floating-icon {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  /* Pulse animation for attention */
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 4px 16px rgba(0, 102, 255, 0.24), 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+    50% {
+      box-shadow: 0 4px 24px rgba(0, 102, 255, 0.4), 0 2px 12px rgba(0, 0, 0, 0.16);
+    }
+  }
+
+  #chat-container.minimized.pulse {
+    animation: pulse 2s ease-in-out infinite;
+  }
+</style>
+</head>
+<body>
+
+<div id="chat-container" class="minimized pulse" title="Chat with us">
+   Header (visible when expanded) 
+  <div id="chat-header">
+    <div id="header-content">
+      <div id="header-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3 .97 4.29L2 22l5.71-.97C9 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.38 0-2.68-.31-3.86-.85l-.28-.14-2.86.49.49-2.86-.14-.28C4.31 14.68 4 13.38 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z"/>
+        </svg>
+      </div>
+      <div id="header-text">
+        <h3>Chat Assistant</h3>
+        <p>We're here to help</p>
+      </div>
+    </div>
+    <button id="close-btn" aria-label="Close chat">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+   Chat iframe 
+  <iframe
+    id="chat-iframe"
+    src="https://copilotstudio.microsoft.com/environments/d8855a0b-6453-e408-9c94-add3719cb29c/bots/ca_agent/webchat?__version__=2"
+    allow="microphone"
+    title="Chat Assistant"
+  ></iframe>
+
+   Floating button icon (visible when minimized) 
+  <div id="floating-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+    </svg>
+  </div>
+
+   Notification badge 
+  <div id="notification-badge">1</div>
+</div>
+
+<script>
+  const container = document.getElementById('chat-container');
+  const closeBtn = document.getElementById('close-btn');
+  const badge = document.getElementById('notification-badge');
+
+  // Toggle chat window
+  function toggleChat() {
+    const isMinimized = container.classList.contains('minimized');
+    
+    if (isMinimized) {
+      container.classList.remove('minimized', 'pulse');
+      badge.style.display = 'none';
+      container.title = 'Chat with us';
+    } else {
+      container.classList.add('minimized');
+      container.title = 'Chat with us';
+      // Add pulse animation after a delay
+      setTimeout(() => {
+        if (container.classList.contains('minimized')) {
+          container.classList.add('pulse');
+        }
+      }, 5000);
+    }
+  }
+
+  // Click on minimized container to open
+  container.addEventListener('click', (e) => {
+    if (container.classList.contains('minimized')) {
+      toggleChat();
+    }
+  });
+
+  // Close button
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleChat();
+  });
+
+  // Prevent clicks inside expanded chat from closing it
+  document.getElementById('chat-iframe').addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+
+  document.getElementById('chat-header').addEventListener('click', (e) => {
+    if (e.target !== closeBtn && !closeBtn.contains(e.target)) {
+      e.stopPropagation();
+    }
+  });
+
+  // Optional: Show notification badge after some time
+  // Uncomment to enable
+  // setTimeout(() => {
+  //   if (container.classList.contains('minimized')) {
+  //     badge.style.display = 'flex';
+  //   }
+  // }, 10000);
+</script>
+
+</body>
+</html>
